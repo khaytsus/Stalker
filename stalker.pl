@@ -22,8 +22,8 @@ $VERSION = '0.76';
 
 # Bindings
 Irssi::signal_add_last( 'event 311', \&whois_request );
-Irssi::signal_add( 'message join', \&nick_joined );
-Irssi::signal_add( 'nicklist changed', \&nick_changed_channel );
+Irssi::signal_add_first( 'message join', \&nick_joined );
+Irssi::signal_add_first( 'nicklist changed', \&nick_changed_channel );
 Irssi::signal_add( 'channel sync', \&channel_sync );
 Irssi::signal_add( 'pidwait', \&record_added );
 
