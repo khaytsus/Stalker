@@ -29,6 +29,7 @@ Irssi::signal_add( 'pidwait', \&record_added );
 
 Irssi::command_bind( 'host_lookup', \&host_request );
 Irssi::command_bind( 'nick_lookup', \&nick_request );
+Irssi::command_bind( 'nick_search', \&partial_nick_request );
 Irssi::command_bind( 'nick_lookup_h', \&nick_request_hosts );
 
 Irssi::theme_register([
@@ -109,6 +110,10 @@ sub host_request {
 
 sub nick_request {
     windowPrint( join( ", ", (get_nick_records('nick', $_[0], $_[1]->{address}))) . ".");
+}
+
+sub partial_nick_request {
+    windowPrint( join( ", ", (get_nick_records('partialnick', $_[0], $_[1]->{address}))) . ".");
 }
 
 #   Record Adding Functions
@@ -402,6 +407,14 @@ sub _r_search {
             my @hosts = _get_hosts_from_nick( $nick, $serv );
             _r_search( $serv, 'host', @hosts );
         }
+    } elsif ( $type eq 'partialnick' ) {
+        $count++;
+        for my $nick ( @input ) {
+            next if exists $data{$nick};
+            $data{$nick} = 'nick';
+            my @hosts = _get_matching_nick( $nick, $serv );
+            _r_search( $serv, 'host', @hosts );
+        }
     } elsif ( $type eq 'host' ) {
         $count++;
         for my $host ( @input ) {
@@ -414,6 +427,17 @@ sub _r_search {
     }
 
     return %data;
+}
+
+# Partial string search to find a nick we don't know the exact string
+sub _get_matching_nick {
+    my ( $nick, $serv, @return ) = @_;
+    $nick = "%" . $nick . "%";
+    my $sth;
+    $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick like lower(?) " );
+    $sth->execute( lc($nick) );
+
+    return _ignore_guests( 'host', $sth );
 }
 
 sub _get_hosts_from_nick {
