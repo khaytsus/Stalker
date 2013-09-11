@@ -35,8 +35,8 @@ Irssi::command_bind( 'nick_import', \&import_records );
 
 Irssi::theme_register([
     $IRSSI{'name'} => '{whois stalker %|$1}',
-    $IRSSI{'name'} . '_join' => '{channick_hilight $0} {chanhost_hilight $1} has joined '
-        . '{hilight $2} ({channel $3})', 
+    $IRSSI{'name'} . '_join' => '--> {channick_hilight3 $0} [{chanhost_hilight $1}] '
+        . '{hilight $2} ({channick_hilight $3})',
 ]);
 
 # Settings
@@ -98,23 +98,23 @@ sub whois_request {
     my ( $me, $n, $u, $h ) = split(" ", $data );
    
     $server->printformat($n,MSGLEVEL_CRAP,$IRSSI{'name'},$n, 
-        join( ", ", (get_nick_records('host', $h, $server->{address}))) . "." );
+        join( ", ", (get_nick_records('host', $h, $server->{address}))) );
 }
 
 sub nick_request_hosts {
-    windowPrint( join( ", ", (get_host_records('nick', $_[0], $_[1]->{address}))) . ".");
+    windowPrint( "Known Hosts: " . join( ", ", (get_host_records('nick', $_[0], $_[1]->{address}))) );
 }
 
 sub host_request {
-    windowPrint( join( ", ", (get_nick_records('host', $_[0], $_[1]->{address}))) . ".");
+    windowPrint( "Known Nicks: " . join( ", ", (get_nick_records('host', $_[0], $_[1]->{address}))) );
 }
 
 sub nick_request {
-    windowPrint( join( ", ", (get_nick_records('nick', $_[0], $_[1]->{address}))) . ".");
+    windowPrint( "Known Nicks: " . join( ", ", (get_nick_records('nick', $_[0], $_[1]->{address}))) );
 }
 
 sub partial_nick_request {
-    windowPrint( join( ", ", (get_nick_records('partialnick', $_[0], $_[1]->{address}))) . ".");
+    windowPrint( "Known Nicks: " . join( ", ", (get_nick_records('partialnick', $_[0], $_[1]->{address}))) );
 }
 
 #   Record Adding Functions
