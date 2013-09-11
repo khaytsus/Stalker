@@ -362,6 +362,7 @@ sub db_add_record
 sub get_host_records {
     my ( $type, $query, $serv, @return ) = @_;
 
+    $query =~ s/\s*$//g;
     $count = 0; %data = (  );
     my %data = _r_search( $serv, $type, $query );
     for my $k ( keys %data ) {
@@ -376,6 +377,7 @@ sub get_host_records {
 sub get_nick_records {
     my ( $type, $query, $serv, @return ) = @_;
 
+    $query =~ s/\s*$//g;
     $count = 0; %data = (  );
     my %data = _r_search( $serv, $type, $query );
     for my $k ( keys %data ) {
