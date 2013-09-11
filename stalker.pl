@@ -31,6 +31,7 @@ Irssi::command_bind( 'host_lookup', \&host_request );
 Irssi::command_bind( 'nick_lookup', \&nick_request );
 Irssi::command_bind( 'nick_search', \&partial_nick_request );
 Irssi::command_bind( 'nick_lookup_h', \&nick_request_hosts );
+Irssi::command_bind( 'nick_import', \&import_records );
 
 Irssi::theme_register([
     $IRSSI{'name'} => '{whois stalker %|$1}',
@@ -329,6 +330,41 @@ sub async_add
     db_add_record(@{$_}) for (@record_list);
     # When done, exit which signals the parent
     POSIX::_exit(1);
+}
+
+# Import records from logs.  I can't provide a snippet to get the data from existing
+# logs because the log formats may vary.  Make sure the lines are of the format:
+# nick user host server
+#
+# I suggest doing this disconnected from any servers, as if you do very many imports
+# irssi WILL stall long enough for you to time out.  So I suggest making the imports
+# less than a few thousand lines and doing it offline.  And back up your database,
+# just in case something goes wrong.
+sub import_records
+{   
+    my $file = "/home/user/stalker-import.txt";
+    if ($_[0])
+    {
+        $file = $_[0];
+    }
+    open(IMPORT,$file);
+    while (<IMPORT>)
+    {
+        chomp;
+        my ($nick, $user, $host, $serv, @rest) = split(' ',$_);
+        if (@rest)
+        {
+                windowPrint( "Too much data found, invalid?");
+                windowPrint( "Line: " . $_ );
+        }
+        else
+        {
+                windowPrint( "nick: " . $nick . " User: " . $user . " Host: " . $host . " Server: " . $serv);
+                db_add_record($nick,$user,$host,$serv);
+        }
+    }
+    close(IMPORT);
+    windowPrint( "Import complete" );
 }
 
 sub db_add_record
