@@ -102,19 +102,27 @@ sub whois_request {
 }
 
 sub nick_request_hosts {
-    windowPrint( "Known Hosts: " . join( ", ", (get_host_records('nick', $_[0], $_[1]->{address}))) );
+    my ( $query, $server ) = ( $_[0], $_[1]->{address} );
+    $query =~ s/ $//;
+    windowPrint( join( ", ", (get_host_records('nick', $query, $server))) );
 }
 
 sub host_request {
-    windowPrint( "Known Nicks: " . join( ", ", (get_nick_records('host', $_[0], $_[1]->{address}))) );
+    my ( $query, $server ) = ( $_[0], $_[1]->{address} );
+    $query =~ s/ $//;
+    windowPrint( join( ", ", (get_nick_records('host', $query, $server))) );
 }
 
 sub nick_request {
-    windowPrint( "Known Nicks: " . join( ", ", (get_nick_records('nick', $_[0], $_[1]->{address}))) );
+    my ( $query, $server ) = ( $_[0], $_[1]->{address} );
+    $query =~ s/ $//;
+    windowPrint( join( ", ", (get_nick_records('nick', $query, $server))) );
 }
 
 sub partial_nick_request {
-    windowPrint( "Known Nicks: " . join( ", ", (get_nick_records('partialnick', $_[0], $_[1]->{address}))) );
+    my ( $query, $server ) = ( $_[0], $_[1]->{address} );
+    $query =~ s/ $//;
+    windowPrint( join( ", ", (get_nick_records('partialnick', $query, $server))) );
 }
 
 #   Record Adding Functions
@@ -414,6 +422,7 @@ sub get_nick_records {
     my ( $type, $query, $serv, @return ) = @_;
 
     $query =~ s/\s*$//g;
+widowprint( "type: [" . $type . "] query: [" . $query . "] serv: [" . $serv . "]");
     $count = 0; %data = (  );
     my %data = _r_search( $serv, $type, $query );
     for my $k ( keys %data ) {
