@@ -495,7 +495,7 @@ sub _get_hosts_from_nick {
         $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick = ? AND serv = ?" );
         $sth->execute( $nick, $serv );
     } else {
-        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick = lower(?) " );
+        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick like lower(?) " );
         $sth->execute( lc($nick) );
     }
 
