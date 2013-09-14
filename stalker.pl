@@ -478,7 +478,7 @@ sub _get_matching_nick {
     my ( $nick, $serv, @return ) = @_;
     $nick = "%" . $nick . "%";
     my $sth;
-    $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick like lower(?) " );
+    $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick like lower(?)" );
     $sth->execute( lc($nick) );
 
     return _ignore_guests( 'host', $sth );
@@ -489,10 +489,10 @@ sub _get_hosts_from_nick {
 
     my $sth;
     if ( Irssi::settings_get_bool( $IRSSI{name} .  "_search_this_network_only" ) ){
-        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick = ? AND serv = ?" );
-        $sth->execute( $nick, $serv );
+        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE lower(nick) = ? AND serv = ?" );
+        $sth->execute( lc($nick), $serv );
     } else {
-        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick like lower(?) " );
+        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE lower(nick) = ?" );
         $sth->execute( lc($nick) );
     }
 
