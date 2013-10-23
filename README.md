@@ -5,3 +5,7 @@ Some possible uses:
 -	You have built a time machine and went back to 1995 and are currently being stalked by someone on IRC.  You DCC with the person and realize their IP is on the 192.168.0.0/24 CIDR.
 -	Someone is evading your ban and your ban-hammer is twitching.
 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/khaytsus/stalker/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
