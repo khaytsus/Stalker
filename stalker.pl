@@ -386,7 +386,13 @@ sub db_add_record
     my $result = $sth->fetchrow_hashref;
 
     if ( $result->{nick} eq $nick ) {
-        #debugPrint( "info", "Record for $nick skipped - already exists." );
+    # Update the timestamp so we can do purging based on last seen
+    $sth = $DBH_child->prepare
+        ("update records set added=datetime('now','localtime') where nick='$nick' and host='$host'" );
+    eval { $sth->execute() };
+    if ($@) {
+        debugPrint( "crit", "Failed to update record, database said: $@" );
+    }
         return 1;
     }
 
