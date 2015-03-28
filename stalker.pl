@@ -35,8 +35,8 @@ Irssi::command_bind( 'nick_import', \&import_records );
 
 Irssi::theme_register([
     $IRSSI{'name'} => '{whois stalker %|$1}',
-    $IRSSI{'name'} . '_join' => '--> {channick_hilight3 $0} [{chanhost_hilight $1}] '
-        . '{hilight $2} ({channick_hilight $3})',
+    $IRSSI{'name'} . '_join' => '{channick_hilight $0} {chanhost_hilight $1} has joined '
+        . '{hilight $2} ({channel $3})',
 ]);
 
 # Settings
