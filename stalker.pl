@@ -132,12 +132,17 @@ sub nick_joined {
     my ( $server, $channel, $nick, $address ) = @_;
     my ( $user, $host ) = ( split ( '@', $address, 2 ) );
 
+    debugPrint("info", "nick_joined");
+    if (_check_ignore($host)) {
+        return;
+    }
+
     add_record( $nick, $user, $host, $server->{address});
-    
+
     if ( Irssi::settings_get_bool($IRSSI{name} . "_stalk_on_join") ) {
         my $window = $server->channel_find($channel);
         my @used_nicknames = get_nick_records( 'host', $host, $server->{address} );
-        
+
         $window->printformat( MSGLEVEL_JOINS, 'stalker_join', 
             $nick, $address, $channel, join( ", ", @used_nicknames )); 
         Irssi::signal_stop(); 
@@ -145,17 +150,27 @@ sub nick_joined {
 }
 
 sub nick_changed_channel {
-    add_record( $_[1]->{nick}, (split( '@', $_[1]->{host} )), $_[0]->{server}->{address} );
+    debugPrint("info", "nick_changed_channel");
+    my ($user, $host) = split( '@', $_[1]->{host} );
+
+    if (_check_ignore($host)) {
+        return;
+    }
+    add_record( $_[1]->{nick}, $user, $host, $_[0]->{server}->{address} );
 }
 
 sub channel_sync {
     my ( $channel ) = @_;
-    
     my $serv = $channel->{server}->{address};
 
+    debugPrint("info", "channel_sync");
     for my $nick ( $channel->nicks() ) {
+        my ($user, $host) = split( '@', $nick->{host} );
+        if (_check_ignore($host)){
+            next;
+        }
         last if $nick->{host} eq ''; # Sometimes channel sync doesn't give us this...
-        add_record( $nick->{nick}, ( split( '@', $nick->{host} ) ), $serv );
+        add_record( $nick->{nick}, $user, $host, $serv );
     }
 }
 
@@ -286,7 +301,8 @@ sub add_record {
     return unless ($nick and $user and $host and $serv);
     
     # Queue the record data and run child unless it's already forked
-    debugPrint("info", "Queue record to add to DB and, if needed, start child process.");
+    debugPrint("info", "Adding: " . $nick . "!" . $user . "@" . $host . " " . $serv);
+    #debugPrint("info", "Queue record to add to DB and, if needed, start child process.");
     push @records_to_add, [$nick, $user, $host, $serv];
     async_add() if (not $child_running);
 }
@@ -417,7 +433,7 @@ sub get_host_records {
     $count = 0; %data = (  );
     my %data = _r_search( $serv, $type, $query );
     for my $k ( keys %data ) {
-        debugPrint( "info", "$type query for records on $query from server $serv returned: $k" );
+        debugPrint( "info", "get_host_records: $type query for records on $query from server $serv returned: $k" );
         push @return, $k if $data{$k} eq 'host';
     }
 
@@ -431,7 +447,7 @@ sub get_nick_records {
     $count = 0; %data = (  );
     my %data = _r_search( $serv, $type, $query );
     for my $k ( keys %data ) {
-        debugPrint( "info", "$type query for records on $query from server $serv returned: $k" );
+        debugPrint( "info", "get_nick_records: $type query for records on $query from server $serv returned: $k" );
         push @return, $k if $data{$k} eq 'nick';
     }
 
@@ -450,13 +466,15 @@ sub _r_search {
     return %data if $count == 2 and ! Irssi::settings_get_bool( $IRSSI{name} . "_recursive_search" );
 
     debugPrint( "info", "Recursion Level: $count" );
-    
+
     if ( $type eq 'nick' ) {
         $count++;
         for my $nick ( @input ) {
             next if exists $data{$nick};
             $data{$nick} = 'nick';
             my @hosts = _get_hosts_from_nick( $nick, $serv );
+            # quick and dirty fix. implement better fix
+            return %data if $count == 2 and ! Irssi::settings_get_bool( $IRSSI{name} . "_recursive_search" );
             _r_search( $serv, 'host', @hosts );
         }
     } elsif ( $type eq 'partialnick' ) {
@@ -538,6 +556,31 @@ sub _ignore_guests {
         push @return, $row->{$field};
     }
     return @return;
+}
+
+sub _check_ignore {
+    my ($host, $nick, $serv) = $_;
+    if ( defined($host) && Irssi::settings_get_bool($IRSSI{name} . "_ignore_guest_hosts") ) {
+        my $regex = Irssi::settings_get_str( $IRSSI{name} . "_guest_host_regex" );
+        if( $host =~ m/$regex/i ) {
+            debugPrint("info", $host . " in ignore list");
+            return 1;
+        }
+    } elsif ( defined($nick) && Irssi::settings_get_bool($IRSSI{name} . "_ignore_guest_nicks") ) {
+        my $regex = Irssi::settings_get_str( $IRSSI{name} . "_guest_nick_regex" );
+        if( $nick =~ m/$regex/i ) {
+            debugPrint("info", $nick . " in ignore list");
+            return 1;
+        }
+    # TODO: add settings. Add proper cache for settings
+    } elsif ( defined($serv) && Irssi::settings_get_bool($IRSSI{name} . "_ignore_networks") ) {
+         my $regex = Irssi::settings_get_str( $IRSSI{name} . "_guest_network_regex" );
+         if( $serv =~ m/$regex/i ) {
+             debugPrint("info", $serv . " in ignore list");
+             return 1;
+         }
+     }
+    return 0;
 }
 
 # Handle printing.
