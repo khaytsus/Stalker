@@ -4,6 +4,8 @@ use File::Spec;
 use DBI;
 use POSIX qw/ strftime /;
 
+use Time::HiRes qw/gettimeofday/;
+
 # Requires:
 #   DBI
 #   DBD::SQLite
@@ -556,7 +558,9 @@ sub verbosePrint {
 sub debugLog {
     my ( $lvl, $msg ) = @_;
     return unless Irssi::settings_get_bool($IRSSI{name} . "_debug_log" );
-    my $now = strftime( "[%D %H:%M:%S]", localtime );
+    my ($seconds, $usecs) = gettimeofday;
+    #my $now = "[" . strftime("%Y-%m-%d %H:%M:%S", localtime($seconds)) . "." . int($usecs/1000) . "]";
+    my $now = sprintf("[%s.%06u]", strftime("%Y-%m-%d %H:%M:%S", localtime($seconds)), $usecs);
 
     my $logpath = Irssi::settings_get_str( $IRSSI{name} . "_debug_log_file" );
     if ( ! File::Spec->file_name_is_absolute($logpath) ) {
