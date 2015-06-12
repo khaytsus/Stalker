@@ -461,41 +461,48 @@ sub get_nick_records {
 
 sub _r_search {
     my ( $serv, $type, @input ) = @_;
-    return %data if $count > 1000;
-    return %data if $count > Irssi::settings_get_str($IRSSI{name} . "_max_recursion");
-    return %data if $count == 2 and ! Irssi::settings_get_bool( $IRSSI{name} . "_recursive_search" );
+    my $size = keys %data;
+    my $size2 = scalar @input;
+    debugPrint( "info", "_r_search: count: $count data size: $size type: $type input size: $size2" );
 
-    debugPrint( "info", "Recursion Level: $count" );
+    return %data if _recursion_done();
 
     if ( $type eq 'nick' ) {
         $count++;
         for my $nick ( @input ) {
             next if exists $data{$nick};
             $data{$nick} = 'nick';
-            my @hosts = _get_hosts_from_nick( $nick, $serv );
-            # quick and dirty fix. implement better fix
-            return %data if $count == 2 and ! Irssi::settings_get_bool( $IRSSI{name} . "_recursive_search" );
-            _r_search( $serv, 'host', @hosts );
+            # only add data if running last step of recursion, otherwise we query DB and stat´sh results from it
+            if (!_recursion_done()) {
+                my @hosts = _get_hosts_from_nick( $nick, $serv );
+                _r_search( $serv, 'host', @hosts );
+            }
         }
     } elsif ( $type eq 'partialnick' ) {
         $count++;
         for my $nick ( @input ) {
             next if exists $data{$nick};
             $data{$nick} = 'nick';
-            my @hosts = _get_matching_nick( $nick, $serv );
-            _r_search( $serv, 'host', @hosts );
+            if (!_recursion_done()) {
+                my @hosts = _get_matching_nick( $nick, $serv );
+                _r_search( $serv, 'host', @hosts );
+            }
         }
     } elsif ( $type eq 'host' ) {
         $count++;
         for my $host ( @input ) {
             next if exists $data{$host};
             $data{$host} = 'host';
-            my @nicks = _get_nicks_from_host( $host, $serv );
-            verbosePrint( "Got nicks: " . join( ", ", @nicks ) . " from host $host" );
-            _r_search( $serv, 'nick', @nicks );
+            if (!_recursion_done()) {
+                my @nicks = _get_nicks_from_host( $host, $serv );
+                verbosePrint( "Got nicks: " . join( ", ", @nicks ) . " from host $host" );
+                _r_search( $serv, 'nick', @nicks );
+            }
         }
     }
 
+    my $size = keys %data;
+    debugPrint( "info", "_r_search ret: count: $count data size: $size type: $type input size: $size2" );
     return %data;
 }
 
@@ -556,6 +563,13 @@ sub _ignore_guests {
         push @return, $row->{$field};
     }
     return @return;
+}
+
+sub _recursion_done {
+    return 1 if $count == 2 and ! Irssi::settings_get_bool( $IRSSI{name} . "_recursive_search" );
+    return 1 if $count > Irssi::settings_get_str($IRSSI{name} . "_max_recursion");
+    return 1 if $count > 1000;
+    return 0;
 }
 
 sub _check_ignore {
