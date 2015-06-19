@@ -315,6 +315,33 @@ sub record_added
     async_add() if (@records_to_add);
 }
 
+sub start_fork() {
+    my $pid = fork();
+    if (not defined $pid) {
+        debugPrint( "crit", "Failed to fork()" );
+        return;
+    }
+
+    $child_running = $pid;
+
+    if ($pid > 0) { # parent thread
+        Irssi::pidwait_add($pid);
+        return;
+    }
+
+    # First thing is to unregister signals. That might prevent the child from catching whatever is causing Issue #3
+    Irssi::signal_remove( 'event 311', \&whois_request );
+    Irssi::signal_remove( 'message join', \&nick_joined );
+    Irssi::signal_remove( 'nicklist changed', \&nick_changed_channel );
+    Irssi::signal_remove( 'channel sync', \&channel_sync );
+    Irssi::signal_remove( 'pidwait', \&record_added );
+    Irssi::command_unbind( 'host_lookup', \&host_request );
+    Irssi::command_unbind( 'nick_lookup', \&nick_request );
+    Irssi::command_unbind( 'nick_lookup_h', \&nick_request_h );
+
+    POSIX::_exit(1);
+}
+
 # Grab the queue and fork a child to process it
 # Signal parent when child is done so we know when it's safe to fork() again
 sub async_add
