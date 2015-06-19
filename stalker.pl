@@ -79,15 +79,7 @@ my $DBH = DBI->connect(
     }
 ) or die "Failed to connect to database $db: " . $DBI::errstr;
 
-# DBI::SQLite and fork() don't mix. Do it anyhow but keep the parent and child DBH separate?
-# Ideally the child should open its own connection.
-my $DBH_child = DBI->connect(
-    'dbi:SQLite:dbname='.$db, "", "",
-    {
-        RaiseError => 1,
-        AutoCommit => 1,
-    }
-) or die "Failed to connect to database $db: " . $DBI::errstr;
+my $DBH_child;
 
 # async data
 my @records_to_add; # Queue of records to add
@@ -359,6 +351,18 @@ sub async_add
     Irssi::command_unbind( 'host_lookup', \&host_request );
     Irssi::command_unbind( 'nick_lookup', \&nick_request );
     Irssi::command_unbind( 'nick_lookup_h', \&nick_request_h );
+
+    # DBI::SQLite and fork() don't mix. Do it anyhow but keep the parent and child DBH separate?
+    # Ideally the child should open its own connection.
+    $DBH_child = DBI->connect(
+        'dbi:SQLite:dbname='.$db, "", "",
+        {
+            RaiseError => 1,
+            AutoCommit => 1,
+        }
+    ) or die "Failed to connect to database $db: " . $DBI::errstr;
+
+    debugPrint("info", "Queue has " . scalar(@record_list) . " items to add");
 
     # In child, do the database tasks
     db_add_record(@{$_}) for (@record_list);
