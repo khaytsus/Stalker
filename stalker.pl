@@ -143,8 +143,16 @@ sub nick_joined {
         my $window = $server->channel_find($channel);
         my @used_nicknames = get_nick_records( 'host', $host, $server->{address} );
 
+        my $nicks_more = @used_nicknames - 20;
+        my $nicks = "";
+        if ( $nicks_more > 0 ) {
+            $nicks = join(", ", @used_nicknames[0..19]) . " + $nicks_more nicks";
+        } else {
+            $nicks = join(", ", @used_nicknames);
+        }
+
         $window->printformat( MSGLEVEL_JOINS, 'stalker_join', 
-            $nick, $address, $channel, join( ", ", @used_nicknames )); 
+            $nick, $address, $channel, $nicks); 
         Irssi::signal_stop(); 
     }
 }
