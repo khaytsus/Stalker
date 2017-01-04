@@ -13,7 +13,7 @@ esac
 echo "This script will take a while to run and will likely make your irc"
 echo "connections time out.  If you want to stop the stalker script in irssi,"
 echo -n "do so now and hit enter when ready.."
-read $foo
+read REPLY
 
 echo ""
 echo -n "Starting delete and vacuum for last ${days} days...  "
@@ -21,6 +21,6 @@ echo -n "Starting delete and vacuum for last ${days} days...  "
 cp nicks.db nicks-${date}.db
 
 sqlite3 nicks.db \
-  "delete from records where added < date('now','-${days} days'); vacuum;"
+    "delete from records where added < date('now','-${days} days');INSERT INTO records (nick, user, host, serv) VALUES( 1, 1, 1, 'script-test-string' ); vacuum;"
 
 echo "Done"
